@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CTE visualize</title>
+    <base href="https://okayama-daiki/Collective-Tree-Exploration" />
+    <link rel="stylesheet" href="./style.css" />
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/viz.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/full.render.js"></script>
+    <script src="./script.js"></script>
+  </head>
+  <body>
+    <main>
+      <h1 class="title">Collective Tree Exploration</h1>
+      <div class="option-container">
+        <label for="n">Node</label>
+        <input type="number" name="n" value="20" max="1000" min="1" />
+        <label for="k">Robots</label>
+        <input type="number" name="k" value="5" max="1000" min="1" />
+        <label for="s">Seed</label>
+        <input type="number" name="s" value="28" />
+        <button onclick="run()">Run</button>
+      </div>
+      <div class="visualization-result hidden">
+        <div class="tree-container"></div>
+        <div class="log-container"></div>
+        <div class="button-container">
+          <button onclick="prev()">PREV</button>
+          <button onClick="next()">NEXT</button>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
