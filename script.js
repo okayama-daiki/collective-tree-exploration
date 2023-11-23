@@ -7,13 +7,13 @@ const COLOR_MAP = {
 let pyodide;
 let result;
 let currentStep = 0;
+let isDisplayRobotLabels = true;
 
 async function init() {
   pyodide = await loadPyodide();
   const file = await fetch("./src/collective_tree_exploration.py");
   const code = await file.text();
   await pyodide.runPythonAsync(code);
-  const viz = new Viz();
   console.log("Pyodide is ready!");
 }
 
@@ -32,10 +32,7 @@ async function run() {
 
 function makeDot() {
   const dot = `graph {
-          graph [
-            label="Step ${currentStep}",
-            labelloc="t"
-          ]
+          graph []
           node [shape=circle];
           ${Array(result.tree.n)
             .fill(0)
@@ -43,8 +40,11 @@ function makeDot() {
               (_, node) =>
                 `${node} [
                   label="${node}\nrobots: ${
-                  result.steps[currentStep].robotCount[node]
+                  isDisplayRobotLabels
+                    ? result.steps[currentStep].robotCount[node]
+                    : result.steps[currentStep].nodeRobots[node]
                 }",
+                  fontsize=10,
                   color="${
                     COLOR_MAP[result.steps[currentStep].nodeStatus[node]]
                   }",
@@ -69,6 +69,9 @@ async function renderTree() {
   const treeContainer = document.querySelector(".tree-container");
   treeContainer.innerHTML = "";
   treeContainer.appendChild(element);
+
+  const stepElement = document.querySelector(".step");
+  stepElement.innerHTML = `Step: ${currentStep + 1}`;
 }
 
 async function next() {
@@ -76,6 +79,8 @@ async function next() {
   if (currentStep < result.steps.length - 1) {
     currentStep++;
     await renderTree();
+  } else {
+    alert("Exploration is finished!");
   }
 }
 
@@ -84,7 +89,14 @@ async function prev() {
   if (currentStep > 0) {
     currentStep--;
     await renderTree();
+  } else {
+    alert("This is the first step!");
   }
+}
+
+async function toggleRobotLabels() {
+  isDisplayRobotLabels = !isDisplayRobotLabels;
+  await renderTree();
 }
 
 init();

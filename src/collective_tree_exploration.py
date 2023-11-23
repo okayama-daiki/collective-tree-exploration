@@ -10,6 +10,7 @@ import typing as t
 class Step(t.TypedDict):
     step: int
     robots: list[int]
+    nodeRobots: list[list[int]]
     robotCount: list[int]
     nodeStatus: list[str]
     traversed: list[bool]
@@ -281,10 +282,15 @@ def run(n: int, k: int, seed: int):
         node_status,
         traversed,
     ) in collective_tree_exploration(k, tree, 0):
+        node_robots: list[list[int]] = [[] for _ in range(n)]
+        for i, v in enumerate(robots):
+            node_robots[v].append(i)
+
         result["steps"].append(
             {
                 "step": step,
                 "robots": robots,
+                "nodeRobots": node_robots,
                 "robotCount": robot_count,
                 "nodeStatus": [s.value for s in node_status],
                 "traversed": traversed,

@@ -1,20 +1,36 @@
 body {
-  margin: 10px;
-  padding: 10px;
+  /* margin: 10px; */
+  /* padding: 10px; */
   font-family: sans-serif;
   background-color: #f5f5f5;
 }
 
-.visualization-result {
-  margin: 10px;
+.log-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
 }
 
-.tree-container polygon {
+.step-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.visualization-result {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.tree-container {
+  width: calc(100% - 20px);
+  height: 80vh;
   overflow: scroll;
+}
+.tree-container polygon {
   fill: transparent !important;
 }
 

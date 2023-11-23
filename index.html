@@ -20,16 +20,27 @@
         <label for="k">Robots</label>
         <input type="number" name="k" value="5" max="1000" min="1" />
         <label for="s">Seed</label>
-        <input type="number" name="s" value="28" />
+        <input type="number" name="s" value="28" max="100000" min="-100000" />
         <button onclick="run()">Run</button>
       </div>
+
       <div class="visualization-result hidden">
-        <div class="tree-container"></div>
-        <div class="log-container"></div>
-        <div class="button-container">
-          <button onclick="prev()">PREV</button>
-          <button onClick="next()">NEXT</button>
+        <div class="log-container">
+          <div class="step-container">
+            <div class="step"></div>
+            <div class="button-container">
+              <button onclick="prev()">PREV</button>
+              <button onClick="next()">NEXT</button>
+              <label for="isDisplayRobotLabels">Show Robot labels</label>
+              <input
+                type="checkbox"
+                name="isDisplayRobotLabels"
+                onclick="toggleRobotLabels()"
+              />
+            </div>
+          </div>
         </div>
+        <div class="tree-container"></div>
       </div>
     </main>
   </body>
