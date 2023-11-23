@@ -25,8 +25,20 @@ async function run() {
   result = await pyodide.runPythonAsync(`run(${n}, ${k}, ${s})`);
   result = JSON.parse(result);
   currentStep = 0;
-  const treeContainer = document.querySelector(".visualization-result");
-  treeContainer.classList.remove("hidden");
+  const resultContainer = document.querySelector(".visualization-result");
+  resultContainer.classList.remove("hidden");
+  document.onkeydown = function (e) {
+    switch (e.key) {
+      case "ArrowRight":
+        next();
+        break;
+      case "ArrowLeft":
+        prev();
+        break;
+      default:
+        break;
+    }
+  };
   await renderTree();
 }
 
