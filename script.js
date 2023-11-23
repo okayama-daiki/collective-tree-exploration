@@ -14,6 +14,8 @@ async function init() {
   const file = await fetch("./src/collective_tree_exploration.py");
   const code = await file.text();
   await pyodide.runPythonAsync(code);
+  const spinnerElement = document.querySelector(".spinner-container");
+  spinnerElement.classList.add("hidden");
   console.log("Pyodide is ready!");
 }
 
