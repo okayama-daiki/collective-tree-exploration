@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import enum
 import itertools
 import json
 import random
@@ -9,10 +8,12 @@ import typing as t
 
 class Step(t.TypedDict):
     step: int
-    robots: list[int]
-    nodeRobots: list[list[int]]
-    robotCount: list[int]
-    nodeStatus: list[str]
+    nodeCase: list[t.Literal[1, 2, 3]]
+    positionOfRobots: list[int]
+    robotsInNode: list[list[int]]
+    isExplored: list[bool]
+    isFinished: list[bool]
+    isInhabited: list[bool]
     traversed: list[bool]
 
 
@@ -27,29 +28,6 @@ class Result(t.TypedDict):
     steps: list[Step]
 
 
-class NodeStatus(enum.Enum):
-    """
-    Three exclusive cases for each node v in which some robots are currently located
-    (denote by T_v the subtree rooted at node v):
-        - FINISHED
-            - all edges in T_v are visited by at least one robot
-            and there is no robot in T_v or all robots are located at node v
-        - UNFINISHED
-            - some edges in T_v are not visited by any robot
-        - INHABITED
-            - all edges in T_v are visited by at least one robot,
-            but some robots are in T_u for some child node u of v
-
-    Note: based on the assumption that the tree is unknown, these states are not
-    determined until the vertex is visited. For example, the parent node of a leaf
-    does not yet know that the leaf itself is in the finished state.
-    """
-
-    FINISHED = "FINISHED"
-    UNFINISHED = "UNFINISHED"
-    INHABITED = "INHABITED"
-
-
 def collective_tree_exploration(k: int, tree: list[list[int]], root: int):
     """
     params:
@@ -61,13 +39,18 @@ def collective_tree_exploration(k: int, tree: list[list[int]], root: int):
     n: t.Final[int] = len(tree)
 
     parents: t.Final[list[int]] = [-1] * n
+
+    # NOTE: edges, leaves, internal_nodes has topological order
     edges: t.Final[list[tuple[int, int]]] = [
         (v, u) for v, adj in enumerate(tree) for u in adj
     ]
     for v, u in edges:
         parents[u] = v
 
-    # traversed[v] := whether node v is traversed by any robot (for visualization)
+    leaves: t.Final[list[int]] = [v for v, adj in enumerate(tree) if not adj]
+    internal_nodes: t.Final[list[int]] = [v for v, adj in enumerate(tree) if adj]
+
+    # traversed[v] := whether node v is traversed by any robot
     traversed: t.Final[list[bool]] = [False] * n
     traversed[root] = True
 
@@ -78,110 +61,127 @@ def collective_tree_exploration(k: int, tree: list[list[int]], root: int):
     robot_count: list[int] = [0] * n
     robot_count[root] = k
 
-    # robot_count_in_subtree[v] := number of robots in the subtree rooted at node v
+    # robot_count_in_subtree[v] := number of robots in the subtree T_v
     robot_count_in_subtree: list[int] = [0] * n
     robot_count_in_subtree[root] = k
 
-    # node_status[v] := status of node v
-    node_status: list[NodeStatus] = [NodeStatus.UNFINISHED] * n
+    # `explored` means every edge of T_u has been traversed by some robot
+    is_explored: list[bool] = [False] * n
 
-    yield 0, robots, robot_count, node_status, traversed.copy()
+    # `finished` means it is `explored` and either there are no robots in it,
+    # or all robots in it are in u
+    is_finished: list[bool] = [False] * n
+
+    # `inhabited` it is explored and either there are no robots in it
+    is_inhabited: list[bool] = [False] * n
+
+    # for visualization
+    node_case: list[t.Literal[1, 2, 3]] = [2] * n
+
+    yield (
+        0,
+        robots,
+        is_explored.copy(),
+        is_finished.copy(),
+        is_inhabited.copy(),
+        traversed.copy(),
+        node_case,
+    )
 
     for step in itertools.count(1):
         next_robots: list[int] = [-1] * k
 
-        for v, robots_indices in convert_to_indices_mapping(robots):
-            if node_status[v] == NodeStatus.FINISHED:
+        for v, robots_indices in convert_to_value_indices_mapping(robots):
+            # case 1
+            if is_finished[v]:
                 for i in robots_indices:
                     next_robots[i] = root if v == root else parents[v]
+                continue
 
-            elif node_status[v] == NodeStatus.UNFINISHED:
-                us = [u for u in tree[v] if node_status[u] == NodeStatus.UNFINISHED]
-                if not us:
-                    continue
+            # case 2
+            if us := [u for u in tree[v] if not is_finished[u]]:
+                # x1 = x2 = ... = x_z = x_{z+1} + 1 = ... = x_j + 1
+                x = [robot_count_in_subtree[u] for u in us]
+                ixz = x.index(min(x))
 
-                xs = [robot_count_in_subtree[u] for u in us]
-                # xs = [x0, ..., x_m-1, x_m, ...,] so that x1 = ... = x_m-1 > x_m = ...
-
-                ixm = 0
-                for i in range(len(us) - 1):
-                    if xs[i] > xs[i + 1]:
-                        ixm = i + 1
-                        break
-
-                for i, robot_index in enumerate(robots_indices):
-                    u = us[(i + ixm) % len(us)]
-                    next_robots[robot_index] = u
+                it = iter(robots_indices)
+                for i in range(len(us)):
+                    u = us[(i + ixz) % len(us)]
+                    for _ in range(len(robots_indices) // len(us)):
+                        next_robots[next(it)] = u
+                        traversed[u] = True
+                for i in range(len(robots_indices) % len(us)):
+                    u = us[(i + ixz) % len(us)]
+                    next_robots[next(it)] = u
                     traversed[u] = True
 
-            elif node_status[v] == NodeStatus.INHABITED:
+                continue
+
+            # case 3
+            if all(is_finished[u] for u in tree[v]) and any(
+                is_inhabited[u] for u in tree[v]
+            ):
                 for i in robots_indices:
                     next_robots[i] = v
+                continue
+
+            raise RuntimeError("unreachable")
 
         robots = next_robots
 
         robot_count = [0] * n
         for v in robots:
             robot_count[v] += 1
-        robot_count_in_subtree = [0] * n
 
+        robot_count_in_subtree = [0] * n
         for v, u in reversed(edges):
             robot_count_in_subtree[u] += robot_count[u]
             robot_count_in_subtree[v] += robot_count_in_subtree[u]
 
-        next_node_status: list[NodeStatus] = [NodeStatus.UNFINISHED] * n
+        for leaf in leaves:
+            is_explored[leaf] = is_explored[leaf] or robot_count[leaf] > 0
+            is_finished[leaf] = is_finished[leaf] or is_explored[leaf]
 
-        for v, u in reversed(edges):
-            if len(tree[u]) == 0:
-                if node_status[u] == NodeStatus.FINISHED or robot_count[u] > 0:
-                    next_node_status[u] = NodeStatus.FINISHED
-                else:
-                    next_node_status[u] = NodeStatus.UNFINISHED
-                continue
+        for v in reversed(internal_nodes):
+            is_explored[v] = is_explored[v] or all(is_explored[u] for u in tree[v])
+            is_finished[v] = is_finished[v] or all(
+                is_explored[u] and robot_count_in_subtree[u] == 0 for u in tree[v]
+            )
 
-            if all(
-                next_node_status[w] == NodeStatus.FINISHED
-                and robot_count_in_subtree[w] == 0
-                for w in tree[u]
-            ):
-                next_node_status[u] = NodeStatus.FINISHED
-            elif all(
-                next_node_status[w] in (NodeStatus.FINISHED, NodeStatus.INHABITED)
-                for w in tree[u]
-            ):
-                next_node_status[u] = NodeStatus.INHABITED
-            else:
-                next_node_status[u] = NodeStatus.UNFINISHED
-        else:
-            if all(
-                node_status[u] == NodeStatus.FINISHED and robot_count_in_subtree[u] == 0
-                for u in tree[root]
-            ):
-                next_node_status[root] = NodeStatus.FINISHED
-            elif all(
-                node_status[u] in (NodeStatus.FINISHED, NodeStatus.INHABITED)
-                for u in tree[root]
-            ):
-                next_node_status[root] = NodeStatus.INHABITED
-            else:
-                next_node_status[root] = NodeStatus.UNFINISHED
+        for v in reversed(range(n)):
+            is_inhabited[v] = robot_count_in_subtree[v] > 0
 
-        node_status = next_node_status
+        node_case: list[t.Literal[1, 2, 3]] = [
+            1
+            if is_finished[v]
+            else 2
+            if any(not is_finished[u] for u in tree[v])
+            else 3
+            for v in range(n)
+        ]
 
-        yield step, robots, robot_count, node_status, traversed.copy()
+        yield (
+            step,
+            robots,
+            is_explored.copy(),
+            is_finished.copy(),
+            is_inhabited.copy(),
+            traversed.copy(),
+            node_case,
+        )
 
-        if all(node_status[v] == NodeStatus.FINISHED for v in range(n)):
+        if all(is_finished):
             break
 
 
-def convert_to_indices_mapping(
+def convert_to_value_indices_mapping(
     sequence: t.Sequence[int],
 ) -> t.Generator[tuple[int, list[int]], None, None]:
     """
     Return an iterator of (element, indices) pairs for the given sequence.
-    >>> list(convert_to_indices_mapping([1, 2, 3, 1, 2, 3]))
+    >>> list(convert_to_value_indices_mapping([1, 2, 3, 1, 2, 3]))
     [(1, [0, 3]), (2, [1, 4]), (3, [2, 5])]
-    >>> list(convert_to_indices_mapping([3, 3, 2, 2, 1, 1]))
+    >>> list(convert_to_value_indices_mapping([3, 3, 2, 2, 1, 1]))
     [(1, [4, 5]), (2, [2, 3]), (3, [0, 1])
     """
 
@@ -197,7 +197,9 @@ def graph_to_tree(
 ) -> tuple[list[list[int]], list[list[int]]]:
     """
     Return a directed graph like tree and its adjacency list. The tree is
-    rooted at the node with the largest degree. Note that node labels is ignored.
+    rooted at the node with the largest degree.
+
+    NOTE: that node labels is ignored.
     >>> graph_to_tree(5, [[4], [3], [3, 4], [1, 2], [0, 2]])
     ([[0, 1], [0, 2], [1, 3], [2, 4]], [[1, 2], [3], [4], [], []])
     """
@@ -278,21 +280,25 @@ def run(n: int, k: int, seed: int):
     for (
         step,
         robots,
-        robot_count,
-        node_status,
+        is_explored,
+        is_finished,
+        is_inhabited,
         traversed,
+        cases,
     ) in collective_tree_exploration(k, tree, 0):
-        node_robots: list[list[int]] = [[] for _ in range(n)]
+        robots_in_node: list[list[int]] = [[] for _ in range(n)]
         for i, v in enumerate(robots):
-            node_robots[v].append(i)
+            robots_in_node[v].append(i)
 
         result["steps"].append(
             {
                 "step": step,
-                "robots": robots,
-                "nodeRobots": node_robots,
-                "robotCount": robot_count,
-                "nodeStatus": [s.value for s in node_status],
+                "nodeCase": cases,
+                "positionOfRobots": robots,
+                "robotsInNode": robots_in_node,
+                "isExplored": is_explored,
+                "isFinished": is_finished,
+                "isInhabited": is_inhabited,
                 "traversed": traversed,
             }
         )

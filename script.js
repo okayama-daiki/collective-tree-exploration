@@ -1,13 +1,7 @@
-const COLOR_MAP = {
-  FINISHED: "green",
-  UNFINISHED: "red",
-  INHABITED: "blue",
-};
-
 let pyodide;
 let result;
-let currentStep = 0;
-let isDisplayRobotLabels = true;
+let currentStep;
+let isDisplayRobotLabels = false;
 
 async function init() {
   pyodide = await loadPyodide();
@@ -16,7 +10,6 @@ async function init() {
   await pyodide.runPythonAsync(code);
   const spinnerElement = document.querySelector(".spinner-container");
   spinnerElement.classList.add("hidden");
-  console.log("Pyodide is ready!");
 }
 
 async function run() {
@@ -55,17 +48,21 @@ function makeDot() {
                 `${node} [
                   label="${node}\nrobots: ${
                   isDisplayRobotLabels
-                    ? result.steps[currentStep].robotCount[node]
-                    : result.steps[currentStep].nodeRobots[node]
+                    ? `{${result.steps[currentStep].robotsInNode[node]}}`
+                    : result.steps[currentStep].robotsInNode[node].length
                 }",
                   fontsize=10,
                   color="${
-                    COLOR_MAP[result.steps[currentStep].nodeStatus[node]]
+                    result.steps[currentStep].traversed[node]
+                      ? { 1: "green", 2: "red", 3: "blue" }[
+                          result.steps[currentStep].nodeCase[node]
+                        ]
+                      : "black"
                   }",
                   style="${
                     result.steps[currentStep].traversed[node]
                       ? "solid"
-                      : "dotted"
+                      : "dashed"
                   }"
                 ];`
             )
