@@ -36,6 +36,14 @@ body {
   animation: spinner 1s infinite ease-in-out;
 }
 
+.option-container input {
+  margin-right: 5px;
+}
+
+.option-container button {
+  margin-left: 5px;
+}
+
 .log-container {
   display: flex;
   flex-direction: column;
@@ -44,8 +52,27 @@ body {
 .step-container {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
+}
+
+.step {
+  display: inline-block;
+  width: 25px;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.button-container button {
+  margin-right: 3px;
+}
+
+.button-container label {
+  margin-left: 5px;
 }
 
 .visualization-result {
@@ -67,9 +94,4 @@ body {
 
 .hidden {
   visibility: hidden;
-}
-
-.step {
-  display: inline-block;
-  width: 30px;
 }
