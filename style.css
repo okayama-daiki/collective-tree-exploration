@@ -68,3 +68,8 @@ body {
 .hidden {
   visibility: hidden;
 }
+
+.step {
+  display: inline-block;
+  width: 30px;
+}

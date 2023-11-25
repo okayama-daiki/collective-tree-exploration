@@ -85,7 +85,7 @@ async function renderTree() {
   treeContainer.appendChild(element);
 
   const stepElement = document.querySelector(".step");
-  stepElement.innerHTML = `Step: ${currentStep + 1}`;
+  stepElement.innerHTML = String(currentStep + 1);
 }
 
 async function next() {
