@@ -9,6 +9,8 @@
     <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/viz.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/viz.js/2.1.2/full.render.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
     <script src="./script.js"></script>
   </head>
   <body>
@@ -35,12 +37,16 @@
             <div class="button-container">
               <button onclick="prev()">PREV</button>
               <button onClick="next()">NEXT</button>
-              <label for="isDisplayRobotLabels">Show Robot labels</label>
-              <input
-                type="checkbox"
-                name="isDisplayRobotLabels"
-                onclick="toggleRobotLabels()"
-              />
+            </div>
+            <label for="isDisplayRobotLabels">Show Robot labels</label>
+            <input
+              type="checkbox"
+              name="isDisplayRobotLabels"
+              onclick="toggleRobotLabels()"
+            />
+            <div class="button-container">
+              <button onclick="downloadSVG()">download svg</button>
+              <button onclick="downloadAllSVG()">download zip</button>
             </div>
           </div>
         </div>

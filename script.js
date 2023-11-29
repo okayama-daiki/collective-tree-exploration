@@ -105,6 +105,34 @@ async function prev() {
   }
 }
 
+async function downloadSVG() {
+  const viz = new Viz();
+  const svg = await viz.renderSVGElement(makeDot(currentStep));
+  const svgString = new XMLSerializer().serializeToString(svg);
+  const blob = new Blob([svgString], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "tree.svg";
+  link.click();
+}
+
+async function downloadAllSVG() {
+  const viz = new Viz();
+  const svgString = await Promise.all(
+    result.steps.map(async (step, index) => {
+      const svg = await viz.renderSVGElement(makeDot(index));
+      return new XMLSerializer().serializeToString(svg);
+    })
+  );
+  const zip = new JSZip();
+  svgString.forEach((svg, index) => {
+    zip.file(`step-${index + 1}.svg`, svg);
+  });
+  const content = await zip.generateAsync({ type: "blob" });
+  saveAs(content, "tree.zip");
+}
+
 async function toggleRobotLabels() {
   isDisplayRobotLabels = !isDisplayRobotLabels;
   await renderTree();
