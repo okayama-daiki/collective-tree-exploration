@@ -24,9 +24,11 @@ async function run() {
   resultContainer.classList.remove("hidden");
   document.onkeydown = function (e) {
     switch (e.key) {
+      case "ArrowDown":
       case "ArrowRight":
         next();
         break;
+      case "ArrowUp":
       case "ArrowLeft":
         prev();
         break;
