@@ -39,7 +39,7 @@ async function run() {
   await renderTree();
 }
 
-function makeDot() {
+function makeDot(step) {
   const dot = `graph {
           graph []
           node [shape=circle];
@@ -50,21 +50,19 @@ function makeDot() {
                 `${node} [
                   label="${node}\nrobots: ${
                   isDisplayRobotLabels
-                    ? `{${result.steps[currentStep].robotsInNode[node]}}`
-                    : result.steps[currentStep].robotsInNode[node].length
+                    ? `{${result.steps[step].robotsInNode[node]}}`
+                    : result.steps[step].robotsInNode[node].length
                 }",
                   fontsize=10,
                   color="${
-                    result.steps[currentStep].traversed[node]
+                    result.steps[step].traversed[node]
                       ? { 1: "green", 2: "red", 3: "blue" }[
-                          result.steps[currentStep].nodeCase[node]
+                          result.steps[step].nodeCase[node]
                         ]
                       : "black"
                   }",
                   style="${
-                    result.steps[currentStep].traversed[node]
-                      ? "solid"
-                      : "dashed"
+                    result.steps[step].traversed[node] ? "solid" : "dashed"
                   }"
                 ];`
             )
@@ -78,7 +76,7 @@ function makeDot() {
 
 async function renderTree() {
   const viz = new Viz();
-  const element = await viz.renderSVGElement(makeDot());
+  const element = await viz.renderSVGElement(makeDot(currentStep));
   const treeContainer = document.querySelector(".tree-container");
   treeContainer.innerHTML = "";
   treeContainer.appendChild(element);
